@@ -99,6 +99,8 @@
             <MainSource>MainSource</MainSource>
         </DelphiCompile>
         <DCCReference Include="uIDRangeHandler.pas"/>
+        <DCCReference Include="uIDValidator.pas"/>
+        <DCCReference Include="uID.pas"/>
         <BuildConfiguration Include="Base">
             <Key>Base</Key>
         </BuildConfiguration>

@@ -2,11 +2,9 @@
 
 Interface
 
-Uses System.SysUtils, System.Generics.Collections;
+Uses System.SysUtils, uID, System.Generics.Collections, uIDValidator;
 
 Type
-  TID = UInt64;
-
   TIDRange = Class
   strict private
     _banner: String;
@@ -16,6 +14,7 @@ Type
     Function StringToID(Const inString: String): TID;
   public
     Constructor Create(Const inBanner: String);
+    Function GetInvalidIDs(Const inIDValidatorClass: TIDValidatorClass): TArray<TID>;
     Property Banner: String Read _banner;
     Property IDs: TArray<TID> Read _ids;
     Property RangeEnd: TID Read _rangeend;
@@ -67,6 +66,29 @@ Begin
     _ids := ids.ToArray;
   Finally
     FreeAndNil(ids);
+  End;
+End;
+
+Function TIDRange.GetInvalidIDs(Const inIDValidatorClass: TIDValidatorClass): TArray<TID>;
+Var
+  invalidids: TList<TID>;
+  validator: TIDValidator;
+  id: TID;
+Begin
+  invalidids := TList<TID>.Create;
+  Try
+    validator := inIDValidatorClass.Create;
+    Try
+      For id In _ids Do
+        If Not validator.IsIDValid(id) Then
+          invalidids.Add(id);
+    Finally
+      FreeAndNil(validator);
+    End;
+
+    Result := invalidids.ToArray;
+  Finally
+    FreeAndNil(invalidids);
   End;
 End;
 

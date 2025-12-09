@@ -5,33 +5,11 @@
 {$R *.res}
 
 uses
-  System.SysUtils, System.IOUtils,
-  uIDRangeHandler in 'uIDRangeHandler.pas';
-
-Function IsIDInvalid(Const inID: TID): Boolean;
-Var
-  id, checking, tempid: String;
-  a: NativeInt;
-Begin
-  id := inID.ToString;
-
-  Result := False;
-
-  For a := 1 To id.Length Div 2 Do
-  Begin
-    checking := id.Substring(0, a);
-
-    tempid := checking;
-
-    While tempid.Length < id.Length Do
-      tempid := tempid + checking;
-
-    Result := tempid = id;
-
-    If Result Then
-      Break;
-  End;
-End;
+  System.SysUtils,
+  System.IOUtils,
+  uIDRangeHandler in 'uIDRangeHandler.pas',
+  uIDValidator in 'uIDValidator.pas',
+  uID in 'uID.pas';
 
 Var
   line, range: String;
@@ -53,13 +31,12 @@ Begin
         Begin
           WriteLn('Checking IDs in range ' + idranges[a].Banner);
 
-          For id In idranges[a].IDs Do
-            If IsIDInvalid(id) Then
-            Begin
-              WriteLn('Invalid ID found: ' + id.ToString);
+          For id in idranges[a].GetInvalidIDs(TIDValidatorPart2) Do
+          Begin
+            WriteLn('- Invalid ID found: ' + id.ToString);
 
-              idsum := idsum + id;
-            End;
+            idsum := idsum + id;
+          End;
         End;
 
         WriteLn;
