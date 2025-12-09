@@ -10,18 +10,27 @@ uses
 
 Function IsIDInvalid(Const inID: TID): Boolean;
 Var
-  s, firsthalf, secondhalf: String;
+  id, checking, tempid: String;
+  a: NativeInt;
 Begin
-  s := inID.ToString;
+  id := inID.ToString;
 
-  Result := s.Length Mod 2 = 0;
+  Result := False;
 
-  If Not Result Then
-    Exit;
+  For a := 1 To id.Length Div 2 Do
+  Begin
+    checking := id.Substring(0, a);
 
-  firsthalf := s.Substring(0, s.Length Div 2);
-  secondhalf := s.Substring(s.Length Div 2);
-  Result := firsthalf = secondhalf;
+    tempid := checking;
+
+    While tempid.Length < id.Length Do
+      tempid := tempid + checking;
+
+    Result := tempid = id;
+
+    If Result Then
+      Break;
+  End;
 End;
 
 Var
