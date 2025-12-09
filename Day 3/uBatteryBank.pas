@@ -8,10 +8,10 @@ Type
   TBatteryBank = Class
   strict private
     _batteries: TArray<Byte>;
-    Function LargestNumberFromPos(Const inStartPos: NativeInt; Const inIgnoreLast: Boolean): NativeInt;
+    Function LargestNumberFromPos(Const inStartPos: NativeInt; Const inIgnoreLastElementAmount: Integer): NativeInt;
   public
     Constructor Create(Const inBankString: String); ReIntroduce;
-    Function MaxJoltage: Byte;
+    Function MaxJoltage(Const inBatteryAmount: Integer): UInt64;
   End;
 
   TBatteryBanks = Class(TObjectList<TBatteryBank>)
@@ -39,16 +39,13 @@ Begin
     _batteries[a] := Byte.Parse(inBankString.Chars[a]);
 End;
 
-Function TBatteryBank.LargestNumberFromPos(Const inStartPos: NativeInt; Const inIgnoreLast: Boolean): NativeInt;
+Function TBatteryBank.LargestNumberFromPos(Const inStartPos: NativeInt; Const inIgnoreLastElementAmount: Integer): NativeInt;
 Var
   a, last: NativeInt;
 Begin
   Result := inStartPos;
 
-  last := High(_batteries);
-
-  If inIgnoreLast Then
-    last := last - 1;
+  last := High(_batteries) - inIgnoreLastElementAmount;
 
   For a := inStartPos + 1 To last Do
   Begin
@@ -60,14 +57,26 @@ Begin
   End;
 End;
 
-Function TBatteryBank.MaxJoltage: Byte;
+Function TBatteryBank.MaxJoltage(Const inBatteryAmount: Integer): UInt64;
 Var
-  first, second: NativeInt;
+  indexes: TArray<NativeInt>;
+  previndex, a: NativeInt;
+  s: String;
 Begin
-  first := LargestNumberFromPos(0, True);
-  second := LargestNumberFromPos(first + 1, False);
+  SetLength(indexes, inBatteryAmount);
+  s := '';
+  previndex := 0;
 
-  Result := Byte.Parse(_batteries[first].ToString + _batteries[second].ToString);
+  For a := Low(indexes) To High(indexes) Do
+  Begin
+    indexes[a] := LargestNumberFromPos(previndex, High(indexes) - a);
+
+    previndex := indexes[a] + 1;
+
+    s := s + _batteries[indexes[a]].ToString;
+  End;
+
+  Result := Int64.Parse(s);
 End;
 
 //

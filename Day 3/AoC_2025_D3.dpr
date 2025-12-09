@@ -12,7 +12,7 @@ Var
   line: String;
   banks: TBatteryBanks;
   bank: TBatteryBank;
-  totaljolts: Integer;
+  totaljolts: UInt64;
 
 Begin
   totaljolts := 0;
@@ -25,9 +25,9 @@ Begin
         Try
           bank := banks.AddBank(line);
 
-          WriteLn('Battery bank: ' + line + ', maximum joltage: ' + bank.MaxJoltage.ToString);
+          WriteLn('Battery bank: ' + line + ', maximum joltage: ' + bank.MaxJoltage(12).ToString);
 
-          totaljolts := totaljolts + bank.MaxJoltage;
+          totaljolts := totaljolts + bank.MaxJoltage(12);
         Finally
           FreeAndNil(banks);
         End;
