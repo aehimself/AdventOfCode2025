@@ -5,7 +5,7 @@
 {$R *.res}
 
 uses
-  System.SysUtils, System.IOUtils,
+  System.SysUtils, System.IOUtils, System.Generics.Collections,
   uFloorPlan in 'uFloorPlan.pas';
 
 Var
@@ -13,6 +13,8 @@ Var
   lines: TArray<String>;
   row, col: NativeInt;
   count, totalremovable: Integer;
+  removable: TList<TPair<NativeInt, NativeInt>>;
+  pair: TPair<NativeInt, NativeInt>;
 
 Begin
   totalremovable := 0;
@@ -39,27 +41,42 @@ Begin
 
         WriteLn;
 
-        WriteLn('*** Counting accessible paper rolls...');
+        removable := TList<TPair<NativeInt, NativeInt>>.Create;
+        Try
+          Repeat
+            removable.Clear;
 
-        For row := 0 To floorplan.MapHeight - 1 Do
-          For col := 0 To floorplan.MapWidth - 1 Do
-          Begin
-            If floorplan[col, row] <> moPaperRoll Then
-              Continue;
+            WriteLn('*** Counting accessible paper rolls...');
 
-            count := floorplan.NeighbouringPaperRolls(col, row);
+            For row := 0 To floorplan.MapHeight - 1 Do
+              For col := 0 To floorplan.MapWidth - 1 Do
+              Begin
+                If floorplan[col, row] <> moPaperRoll Then
+                  Continue;
 
-            If count <= 3 Then
-            Begin
-              Inc(totalremovable);
+                count := floorplan.NeighbouringPaperRolls(col, row);
 
-              WriteLn('Paper roll at row ' + row.ToString + ' column ' + col.ToString + ' has only ' + count.ToString + ' neighbouring paper rolls!');
-            End;
-          End;
+                If count <= 3 Then
+                Begin
+                  removable.Add(TPair<Nativeint, NativeInt>.Create(col, row));
 
-        WriteLn('A total of ' + totalremovable.ToString + ' paper rolls can be accessed by a forklift.');
+                  WriteLn('Paper roll at row ' + row.ToString + ' column ' + col.ToString + ' has only ' + count.ToString + ' neighbouring paper rolls!');
+                End;
+              End;
 
-        WriteLn;
+            WriteLn(removable.Count.ToString + ' paper rolls can be accessed by a forklift.');
+            totalremovable := totalremovable + removable.Count;
+
+            For pair In removable Do
+              floorplan[pair.Key, pair.Value] := moEmpty;
+
+            WriteLn;
+          Until removable.Count = 0;
+
+          WriteLn('A total of ' + totalremovable.ToString + ' paper rolls could be removed until none can be accessed.');
+        Finally
+          FreeAndNil(removable);
+        End;
       Finally
         FreeAndNil(floorplan);
       End;
