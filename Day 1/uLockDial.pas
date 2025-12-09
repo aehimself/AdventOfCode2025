@@ -20,9 +20,10 @@ Type
     Function SanitizeAmount(Const inAmount: Integer): Integer;
   public
     Constructor Create; ReIntroduce;
-    Procedure MoveLeft(Const inAmount: Integer);
-    Procedure MoveRight(Const inAmount: Integer);
+    Procedure MoveLeft(Const inAmount: Integer; Var outRolledOver: Boolean);
+    Procedure MoveRight(Const inAmount: Integer; Var outRolledOver: Boolean);
     Property Max: Integer Read _max Write SetMax;
+    Property MaxDistance: Integer Read GetMaxDistance;
     Property Min: Integer Read _min Write SetMin;
     Property Position: Integer Read _pos Write _pos;
   End;
@@ -59,7 +60,7 @@ Begin
   Result := _max - _min + 1;
 End;
 
-Procedure TLockDial.MoveLeft(Const inAmount: Integer);
+Procedure TLockDial.MoveLeft(Const inAmount: Integer; Var outRolledOver: Boolean);
 Var
   amount, distance: Integer;
 Begin
@@ -71,12 +72,20 @@ Begin
   distance := DistanceBetween(_min, _pos);
 
   If amount <= distance Then
-    _pos := _pos - amount
+  Begin
+    _pos := _pos - amount;
+
+    outRolledOver := False;
+  End
   Else
+  Begin
+    outRolledOver := _pos <> 0;
+
     _pos := _max - amount + distance + 1;
+  End;
 End;
 
-Procedure TLockDial.MoveRight(Const inAmount: Integer);
+Procedure TLockDial.MoveRight(Const inAmount: Integer; Var outRolledOver: Boolean);
 Var
   amount, distance: Integer;
 Begin
@@ -88,9 +97,17 @@ Begin
   distance := DistanceBetween(_pos, _max);
 
   If amount <= distance Then
-    _pos := _pos + amount
+  Begin
+    _pos := _pos + amount;
+
+    outRolledOver := False;
+  End
   Else
+  Begin
+    outRolledOver := _pos <> 0;
+
     _pos := _min + amount - distance - 1;
+  End;
 End;
 
 Function TLockDial.SanitizeAmount(Const inAmount: Integer): Integer;
@@ -102,6 +119,7 @@ End;
 Procedure TLockDial.SelfTest;
 Var
   prevmax, prevmin, prevpos: Integer;
+  dummy: Boolean;
 Begin
   If Not DistanceBetween(-1, -2) = 1 Then
     Raise ELockDialException.Create('Selftest failure: Distance between -1 and -2 is not 1!');
@@ -129,52 +147,52 @@ Begin
     _max := 99;
     _pos := 50;
 
-    MoveLeft(68);
+    MoveLeft(68, dummy);
 
     If _pos <> 82 Then
       Raise ELockDialException.Create('Selftest failure: Moving left from 50 by 68 does not result in position 82!');
 
-    MoveLeft(30);
+    MoveLeft(30, dummy);
 
     If _pos <> 52 Then
       Raise ELockDialException.Create('Selftest failure: Moving left from 82 by 30 does not result in position 52!');
 
-    MoveRight(48);
+    MoveRight(48, dummy);
 
     If _pos <> 0 Then
       Raise ELockDialException.Create('Selftest failure: Moving right from 52 by 48 does not result in position 0!');
 
-    MoveLeft(5);
+    MoveLeft(5, dummy);
 
     If _pos <> 95 Then
       Raise ELockDialException.Create('Selftest failure: Moving left from 0 by 5 does not result in position 95!');
 
-    MoveRight(60);
+    MoveRight(60, dummy);
 
     If _pos <> 55 Then
       Raise ELockDialException.Create('Selftest failure: Moving right from 95 by 60 does not result in position 55!');
 
-    MoveLeft(55);
+    MoveLeft(55, dummy);
 
     If _pos <> 0 Then
       Raise ELockDialException.Create('Selftest failure: Moving left from 55 by 55 does not result in position 0!');
 
-    MoveLeft(1);
+    MoveLeft(1, dummy);
 
     If _pos <> 99 Then
       Raise ELockDialException.Create('Selftest failure: Moving left from 0 by 1 does not result in position 99!');
 
-    MoveLeft(99);
+    MoveLeft(99, dummy);
 
     If _pos <> 0 Then
       Raise ELockDialException.Create('Selftest failure: Moving left from 99 by 99 does not result in position 0!');
 
-    MoveRight(14);
+    MoveRight(14, dummy);
 
     If _pos <> 14 Then
       Raise ELockDialException.Create('Selftest failure: Moving right from 0 by 14 does not result in position 14!');
 
-    MoveLeft(82);
+    MoveLeft(82, dummy);
 
     If _pos <> 32 Then
       Raise ELockDialException.Create('Selftest failure: Moving left from 14 by 82 does not result in position 32!');

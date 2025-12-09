@@ -11,9 +11,11 @@ Uses
 Var
   dial: TLockDial;
   line: String;
-  amount, zeroes: Integer;
+  amount, zeroes, rollovers: Integer;
+  rollover: Boolean;
 Begin
   zeroes := 0;
+  rollover := False;
 
   Try
     Try
@@ -21,7 +23,7 @@ Begin
       Try
         For line In TFile.ReadAllLines('.\combination.txt') Do
         Begin
-          Write('- Read line: "' + line + '"... ');
+          Write('- ' + line + '... ');
 
           amount := Integer.Parse(line.Substring(1));
 
@@ -30,24 +32,32 @@ Begin
           Case UpperCase(line[1])[1] Of
             'L':
             Begin
-              Write(' Left!');
+              Write(' Left! ');
 
-              dial.MoveLeft(amount);
+              dial.MoveLeft(amount, rollover);
             End;
             'R':
             Begin
-              Write(' Right!');
+              Write(' Right! ');
 
-              dial.MoveRight(amount);
+              dial.MoveRight(amount, rollover);
             End;
             Else
               Raise Exception.Create('Unknown direction to move the dial!');
           End;
 
-          WriteLn(' Position is ' + dial.Position.ToString + '.');
+          Write('Final position is ' + dial.Position.ToString + '. ');
+
+          rollovers := amount Div dial.MaxDistance;
+          If rollover And (dial.Position <> 0) Then
+            Inc(rollovers);
+
+          WriteLn('Dial rolls over a total of ' + rollovers.ToString + ' time(s).');
 
           If dial.Position = 0 Then
             Inc(zeroes);
+
+          Inc(zeroes, rollovers);
         End;
       Finally
         FreeAndNil(dial);
