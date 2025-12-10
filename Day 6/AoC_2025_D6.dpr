@@ -9,9 +9,10 @@ uses
   uHomeworkSolver in 'uHomeworkSolver.pas';
 
 Var
+  lines: TArray<String>;
   line: String;
   solver: THomeworkSolver;
-  a: NativeInt;
+  a, col: NativeInt;
 
 Begin
   Try
@@ -20,12 +21,24 @@ Begin
       Try
         WriteLn('Filling up homework solver...');
 
-        For line In TFile.ReadAllLines('.\homework.txt') Do
-        Begin
+        lines := TFile.ReadAllLines('.\homework.txt');
+
+        If Length(lines) = 0 Then
+          Exit;
+
+        col := Length(lines[0]);
+        Repeat
+          Dec(col);
+          line := '';
+
+          For a := 0 To Length(lines) - 1 Do
+            If lines[a].Chars[col] <> ' ' Then
+              line := line + lines[a].Chars[col];
+
           WriteLn(line);
 
           solver.AddHomeworkLine(line);
-        End;
+        Until col = 0;
 
         WriteLn;
         WriteLn('Problem results:');

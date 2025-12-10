@@ -25,15 +25,13 @@ Type
   THomeworkSolver = Class
   strict private
     _problems: TObjectList<THomeworkProblem>;
-    Procedure AddArithmeticOperations(Const inArithmeticOperations: TArray<TArithmeticOperation>);
-    Procedure AddNumbers(Const inNumbers: TArray<TNumber>);
     Function GetProblem(Const inProblemIndex: NativeInt): THomeworkProblem;
     Function GetProblemCount: NativeInt;
     Function GetResults: TNumber;
   public
     Constructor Create; ReIntroduce;
     Destructor Destroy; Override;
-    Procedure AddHomeworkLine(Const inHomeworkLine: String);
+    Procedure AddHomeworkLine(inHomeworkLine: String);
     Property Problem[Const inProblemIndex: NativeInt]: THomeworkProblem Read GetProblem; Default;
     Property ProblemCount: NativeInt Read GetProblemCount;
     Property Results: TNumber Read GetResults;
@@ -126,68 +124,29 @@ Begin
     Result := Result + _problems[a].Result;
 End;
 
-Procedure THomeworkSolver.AddArithmeticOperations(Const inArithmeticOperations: TArray<TArithmeticOperation>);
-Var
-  a: NativeInt;
+Procedure THomeworkSolver.AddHomeworkLine(inHomeworkLine: String);
 Begin
-  If Length(inArithmeticOperations) <> _problems.Count Then
-    Raise EHomeworkSolverException.Create('Arithmetic operation and problem amount differs!');
-
-  For a := 0 To _problems.Count - 1 Do
-    _problems[a].ArithmeticOperation := inArithmeticOperations[a];
-End;
-
-Procedure THomeworkSolver.AddHomeworkLine(Const inHomeworkLine: String);
-Var
-  temp: TArray<String>;
-  numbers: TArray<TNumber>;
-  aops: TArray<TArithmeticOperation>;
-  dummy: TNumber;
-  a: NativeInt;
-Begin
-  temp := inHomeworkLine.Split([' '], TStringSplitOptions.ExcludeEmpty);
-
-  If Length(temp) = 0 Then
-    Exit;
-
-  If _problems.Count = 0 Then
-    For a := Low(temp) To High(temp) Do
-      _problems.Add(THomeworkProblem.Create);
-
-  If TNumber.TryParse(temp[0], dummy) Then
+  If (_problems.Count = 0) Or inHomeworkLine.IsEmpty Then
   Begin
-    SetLength(numbers, Length(temp));
+    _problems.Add(THomeworkProblem.Create);
 
-    For a := Low(temp) To High(temp) Do
-      numbers[a] := TNumber.Parse(temp[a]);
+    If inHomeworkLine.IsEmpty Then
+      Exit;
+  End;
 
-    Self.AddNumbers(numbers);
-  End
-  Else If (temp[0] = '+') Or (temp[0] = '*') Then
+  If inHomeworkLine.EndsWith('+') Or inHomeworkLine.EndsWith('*') Then
   Begin
-    SetLength(aops, Length(temp));
+    If inHomeworkLine.EndsWith('+') Then
+      _problems[_problems.Count - 1].ArithmeticOperation := aoAddition
+    Else If inHomeworkLine.EndsWith('*') Then
+      _problems[_problems.Count - 1].ArithmeticOperation := aoMultiplication
+    Else
+      Raise EHomeworkSolverException.Create('Unknown arithmetic operator found!');
 
-    For a := Low(temp) To High(temp) Do
-      If temp[a] = '+' Then
-        aops[a] := aoAddition
-      Else If temp[a] = '*' Then
-        aops[a] := aoMultiplication
-      Else
-        Raise EHomeworkSolverException.Create('Unknown arithmetic operator found!');
+    inHomeworkLine := inHomeworkLine.Substring(0, inHomeworkLine.Length - 1);
+  End;
 
-    Self.AddArithmeticOperations(aops);
-  End
-End;
-
-Procedure THomeworkSolver.AddNumbers(const inNumbers: TArray<TNumber>);
-Var
-  a: NativeInt;
-Begin
-  If Length(inNumbers) <> _problems.Count Then
-    Raise EHomeworkSolverException.Create('Number and problem amount differs!');
-
-  For a := 0 To _problems.Count - 1 Do
-    _problems[a].AddNumber(inNumbers[a]);
+  _problems[_problems.Count - 1].AddNumber(TNumber.Parse(inHomeworkLine));
 End;
 
 End.
