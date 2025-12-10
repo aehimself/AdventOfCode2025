@@ -5,8 +5,10 @@
 {$R *.res}
 
 uses
-  System.SysUtils, System.IOUtils,
-  uInventoryManager in 'uInventoryManager.pas';
+  System.SysUtils,
+  System.IOUtils,
+  uInventoryManager in 'uInventoryManager.pas',
+  uIngredientRange in 'uIngredientRange.pas';
 
 Var
   invmgr: TInventoryManager;
@@ -57,7 +59,8 @@ Begin
           End;
 
         WriteLn;
-        WriteLn('A total of ' + fresh.ToString + ' ingredient(s) are fresh.');
+        WriteLn('A total of ' + fresh.ToString + ' ingredient(s) from the stock are fresh.');
+        WriteLn('A total of ' + invmgr.TotalFreshIngredients.ToString + ' ingredient(s) are fresh in the inventory.');
 
       Finally
         FreeAndNil(invmgr);
