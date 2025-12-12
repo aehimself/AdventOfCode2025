@@ -5,48 +5,26 @@
 {$R *.res}
 
 uses
-  System.SysUtils, System.IOUtils,
-  uManifoldSimulator in 'uManifoldSimulator.pas';
+  System.SysUtils,
+  System.IOUtils,
+  uManifoldMapper in 'uManifoldMapper.pas';
 
 Var
   line: String;
-  msim: TManifoldSimulator;
-  level: TManifoldLevel;
-  a: NativeInt;
+  mmap: TManifoldMapper;
 Begin
   Try
     Try
-      msim := TManifoldSimulator.Create;
+      mmap := TManifoldMapper.Create;
       Try
         For line In TFile.ReadAllLines('.\manifold.txt') Do
-        Begin
-          level := msim.NewLevel;
-
-          // Fill starting beams from the file
-          a := line.IndexOf('S');
-
-          While a > -1 Do
-          Begin
-            level.Beam[a] := True;
-
-            a := line.IndexOf('S', a + 1);
-          End;
-
-          // Fill splitters from the file
-          a := line.IndexOf('^');
-
-          While a > -1 Do
-          Begin
-            level.Splitter[a] := True;
-
-            a := line.IndexOf('^', a + 1);
-          End;
-        End;
+          mmap.AddLevel(line);
 
         WriteLn;
-        WriteLn('Total splitters hit: ' + msim.TotalSplittersHit.ToString);
+        WriteLn('Total splitters hit: ' + mmap.SplitterCount.ToString);
+        WriteLn('Maximum path count: ' + mmap.MaximumPathCount.ToString);
       Finally
-        FreeAndNil(msim);
+        FreeAndNil(mmap);
       End;
     Except
       On E: Exception Do
