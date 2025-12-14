@@ -42,7 +42,8 @@ Begin
         WriteLn;
         WriteLn('Getting shortest distances...');
 
-        For a := 1 To 1000 Do
+        // For a := 1 To 1000 Do
+        While Not jmp.AllBoxesConnected Do
         Begin
           d := jmp.ShortestDistance(pdist);
 
@@ -51,6 +52,9 @@ Begin
 
           pdist := d.Distance;
         End;
+
+        WriteLn;
+        WriteLn('Multiple of X coordinates of last two boxes connected: ' + Int64(d.Box1.X * d.Box2.X).ToString);
 
         WriteLn;
         WriteLn('The following circuits have been created:');
@@ -71,12 +75,15 @@ Begin
             sizes.Add(Length(circuits[a]));
           End;
 
-          WriteLn;
-          Write('Finding the 3 largest ones...');
+          If sizes.Count > 2 Then
+          Begin
+            WriteLn;
+            Write('Finding the 3 largest ones...');
 
-          sizes.Sort;
+            sizes.Sort;
 
-          WriteLn(' Multiple of 3 largest: ' + Integer(sizes[sizes.Count - 1] * sizes[sizes.Count - 2] * sizes[sizes.Count - 3]).ToString);
+            WriteLn(' Multiple of 3 largest: ' + Integer(sizes[sizes.Count - 1] * sizes[sizes.Count - 2] * sizes[sizes.Count - 3]).ToString);
+          End;
 
         Finally
           FreeAndNil(sizes);

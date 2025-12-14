@@ -37,6 +37,7 @@ Type
     Destructor Destroy; Override;
     Procedure CalculateDistances;
     Function AddJunctionBox(Const inX, inY, inZ: Integer): TJunctionBox;
+    Function AllBoxesConnected: Boolean;
     Function Circuits: TArray<TArray<TJunctionBox>>;
     Function ShortestDistance(Const inMinDistance: Extended): TDistance;
   End;
@@ -78,6 +79,18 @@ Begin
   Result := TJunctionBox.Create(inX, inY, inZ);
 
   _boxes.Add(Result);
+End;
+
+Function TJunctionBoxPlanner.AllBoxesConnected: Boolean;
+Var
+  a, total: NativeInt;
+Begin
+  total := 0;
+
+  For a := 0 To _circuits.Count - 1 Do
+    total := total + _circuits[a].Count;
+
+  Result := total = _boxes.Count;
 End;
 
 Function TJunctionBoxPlanner.BoxCircuit(Const inJunctionBox: TJunctionBox): NativeInt;
