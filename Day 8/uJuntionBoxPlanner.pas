@@ -30,14 +30,15 @@ Type
     _boxes: TObjectList<TJunctionBox>;
     _circuits: TObjectList<TList<TJunctionBox>>;
     _distances: TDictionary<TJunctionBox, TDictionary<TJunctionBox, Extended>>;
-    Procedure RemoveDistanceBetween(Const inBox1, inBox2: TJunctionBox);
+    Procedure AddBoxToCircuit(Const inBox: TJunctionBox; Const inCircuit: NativeInt);
+    Function BoxCircuit(Const inJunctionBox: TJunctionBox): NativeInt;
   public
     Constructor Create; ReIntroduce;
     Destructor Destroy; Override;
     Procedure CalculateDistances;
     Function AddJunctionBox(Const inX, inY, inZ: Integer): TJunctionBox;
     Function Circuits: TArray<TArray<TJunctionBox>>;
-    Function ShortestDistance: TDistance;
+    Function ShortestDistance(Const inMinDistance: Extended): TDistance;
   End;
 
 Implementation
@@ -57,15 +58,41 @@ Begin
   _z := inZ;
 End;
 
+Function TJunctionBox.GetNicePosition: String;
+Begin
+  Result := Format('( %d, %d, %d )', [_x, _y, _z]);
+End;
+
 //
 // TJunctionBoxPlanner
 //
+
+Procedure TJunctionBoxPlanner.AddBoxToCircuit(Const inBox: TJunctionBox; Const inCircuit: NativeInt);
+Begin
+  // Then, add the box
+  _circuits[inCircuit].Add(inBox);
+End;
 
 Function TJunctionBoxPlanner.AddJunctionBox(Const inX, inY, inZ: Integer): TJunctionBox;
 Begin
   Result := TJunctionBox.Create(inX, inY, inZ);
 
   _boxes.Add(Result);
+End;
+
+Function TJunctionBoxPlanner.BoxCircuit(Const inJunctionBox: TJunctionBox): NativeInt;
+Var
+  a: NativeInt;
+Begin
+  Result := -1;
+
+  For a := 0 To _circuits.Count - 1 Do
+    If _circuits[a].Contains(inJunctionBox) Then
+    Begin
+      Result := a;
+
+      Break;
+    End;
 End;
 
 Procedure TJunctionBoxPlanner.CalculateDistances;
@@ -120,31 +147,10 @@ Begin
   inherited;
 End;
 
-Procedure TJunctionBoxPlanner.RemoveDistanceBetween(Const inBox1, inBox2: TJunctionBox);
-Begin
-  If _distances.ContainsKey(inBox1) Then
-  Begin
-    _distances[inBox1].Remove(inBox2);
-
-    If _distances[inBox1].Count = 0 Then
-      _distances.Remove(inBox1);
-  End;
-
-  If _distances.ContainsKey(inBox2) Then
-  Begin
-    _distances[inBox2].Remove(inBox1);
-
-    If _distances[inBox2].Count = 0 Then
-      _distances.Remove(inBox2);
-  End;
-End;
-
-Function TJunctionBoxPlanner.ShortestDistance: TDistance;
+Function TJunctionBoxPlanner.ShortestDistance(Const inMinDistance: Extended): TDistance;
 Var
   box1, box2, boxenum: TJunctionBox;
-  found: Boolean;
-  enum: TList<TJunctionBox>;
-  a: NativeInt;
+  box1circuit, box2circuit: NativeInt;
 Begin
   Result.Box1 := nil;
   Result.Box2 := nil;
@@ -152,60 +158,53 @@ Begin
 
   For box1 In _distances.Keys Do
     For box2 In _distances.Keys Do
-      If (box1 <> box2) And _distances[box1].ContainsKey(box2) And (_distances[box1][box2] < Result.Distance) Then
+      If (box1 <> box2) And _distances[box1].ContainsKey(box2) And (_distances[box1][box2] > inMinDistance) And
+         (_distances[box1][box2] < Result.Distance) Then
       Begin
         Result.Box1 := box1;
         Result.Box2 := box2;
         Result.Distance := _distances[box1][box2];
       End;
 
-  If Assigned(Result.Box1) And Assigned(Result.Box2) Then
+  If Not Assigned(Result.Box1) Or Not Assigned(Result.Box2) Then
+    Exit;
+
+  // Check if Box1 is in a circuit already. If not, create one and add it
+  box1circuit := BoxCircuit(Result.Box1);
+
+  If box1circuit = -1 Then
   Begin
-    Self.RemoveDistanceBetween(Result.Box1, Result.Box2);
+    box1circuit := _circuits.Add(TList<TJunctionBox>.Create);
+    _circuits[box1circuit].Add(Result.Box1);
 
-    found := False;
+    WriteLn('Circuit #' + box1circuit.ToString + ' has been created for ' + result.Box1.NicePosition);
+  End
+  Else
+    WriteLn(Result.Box1.NicePosition + ' has been found in circuit #' + box1circuit.ToString);
 
-    For enum In _circuits Do
+  // Let's see if box2 (which we are about to add to box1s circuit) is in a circuit already. If it is,
+  // we have to merge the circuits
+  box2circuit := BoxCircuit(Result.Box2);
+
+  If box2circuit = box1circuit Then
+    WriteLn(Result.Box1.NicePosition + ' has been found in the same circuit.')
+  Else If box2circuit <> -1 Then
+  Begin
+    For boxenum In _circuits[box2circuit] Do
     Begin
-      If enum.Contains(Result.Box1) And enum.Contains(Result.Box2) Then
-        found := True
-      Else If enum.Contains(Result.Box1) And Not enum.Contains(Result.Box2) Then
-      Begin
-        enum.Add(Result.Box2);
+      Self.AddBoxToCircuit(boxenum, box1circuit);
 
-        found := True;
-      End
-      Else If enum.Contains(Result.Box2) And Not enum.Contains(Result.Box1) Then
-      Begin
-        enum.Add(Result.Box1);
-
-        found := True;
-      End;
-
-      If found Then
-      Begin
-        For boxenum in enum Do
-        Begin
-          Self.RemoveDistanceBetween(Result.Box1, boxenum);
-          Self.RemoveDistanceBetween(Result.Box2, boxenum);
-        End;
-
-        Break;
-      End;
+      WriteLn('Box ' + boxenum.NicePosition + ' has been moved from circuit #' + box2circuit.ToString + ' to #' + box1circuit.ToString);
     End;
 
-    If Not found Then
-    Begin
-      a := _circuits.Add(TList<TJunctionBox>.Create);
+    _circuits.Delete(box2circuit);
+  End
+  Else
+  Begin
+    Self.AddBoxToCircuit(Result.Box2, box1circuit);
 
-      _circuits[a].AddRange([Result.Box1, Result.Box2]);
-    End;
+    WriteLn(Result.box2.NicePosition + ' has been added to circuit #' + box1circuit.ToString);
   End;
-End;
-
-Function TJunctionBox.GetNicePosition: String;
-Begin
-  Result := Format('( %d, %d, %d )', [_x, _y, _z]);
 End;
 
 End.

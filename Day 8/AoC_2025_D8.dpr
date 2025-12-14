@@ -16,8 +16,11 @@ Var
   a, b: NativeInt;
   circuits: TArray<TArray<TJunctionBox>>;
   sizes: TList<NativeInt>;
+  pdist: Extended;
 
 Begin
+  pdist := 0;
+
   Try
     Try
       jmp := TJunctionBoxPlanner.Create;
@@ -39,12 +42,14 @@ Begin
         WriteLn;
         WriteLn('Getting shortest distances...');
 
-        // 25704 too much
         For a := 1 To 1000 Do
         Begin
-          d := jmp.ShortestDistance;
+          d := jmp.ShortestDistance(pdist);
 
           WriteLn(a.ToString + '. shortest distance: ' + FormatFloat(',.000', d.Distance) + ' between ' + d.Box1.NicePosition + ' and ' + d.Box2.NicePosition);
+          WriteLn;
+
+          pdist := d.Distance;
         End;
 
         WriteLn;
